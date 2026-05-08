@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 
 import { LoggingInterceptor } from './common/interceptors/logging/logging.interceptor';
+import { clientConfig } from './config/client.config';
 
 
 async function bootstrap() {
@@ -27,8 +28,14 @@ async function bootstrap() {
     }
   ));
 
+  app.enableCors({
+    origin: clientConfig.cors.origins,
+    credentials: true,
+  });
+
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   await app.listen(port);
 }
 bootstrap();
+
