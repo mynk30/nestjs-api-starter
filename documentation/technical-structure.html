@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2nest-fastify | Technical Structure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f1a;
+            --card-bg: #161b22;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-primary: #58a6ff;
+            --accent-secondary: #bc8cff;
+            --border: #30363d;
+            --folder: #7d8590;
+            --file: #58a6ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        header {
+            margin-bottom: 50px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--accent-primary);
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--accent-primary);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin: 40px 0 20px;
+            color: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2::before {
+            content: '>';
+            font-family: monospace;
+            color: var(--accent-primary);
+        }
+
+        .tree-container {
+            background: #0d1117;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.95rem;
+            margin-bottom: 40px;
+            overflow-x: auto;
+        }
+
+        .tree-line {
+            display: block;
+            margin-bottom: 4px;
+            white-space: pre;
+        }
+
+        .folder { color: var(--folder); font-weight: 600; }
+        .file { color: var(--file); }
+        .comment { color: #484f58; font-style: italic; margin-left: 10px; }
+
+        .detail-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .detail-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: var(--accent-primary);
+        }
+
+        .detail-card p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .tech-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #21262d;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin: 4px;
+            color: var(--text-primary);
+        }
+
+        footer {
+            margin-top: 80px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .tree-container { padding: 15px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to API Docs</a>
+        <header>
+            <h1>Technical Structure</h1>
+            <p style="color: var(--text-secondary);">A deep dive into the project's modular architecture and repository pattern.</p>
+        </header>
+
+        <section>
+            <h2>Directory Tree</h2>
+            <div class="tree-container">
+                <span class="tree-line"><span class="folder">2nest-fastify/</span></span>
+                <span class="tree-line">├── <span class="folder">src/</span></span>
+                <span class="tree-line">│   ├── <span class="folder">common/</span>         <span class="comment"># Interceptors, Filters, Guards</span></span>
+                <span class="tree-line">│   ├── <span class="folder">config/</span>         <span class="comment"># Application configuration</span></span>
+                <span class="tree-line">│   ├── <span class="folder">database/</span>       <span class="comment"># Base Repository & Mongoose Module</span></span>
+                <span class="tree-line">│   ├── <span class="folder">customers/</span>      <span class="comment"># Customer Domain Module</span></span>
+                <span class="tree-line">│   ├── <span class="folder">admins/</span>         <span class="comment"># Admin Domain Module</span></span>
+                <span class="tree-line">│   └── <span class="folder">auth/</span>           <span class="comment"># Auth Domain Module</span></span>
+                <span class="tree-line">└── <span class="file">main.ts</span></span>
+            </div>
+        </section>
+
+        <section>
+            <h2>Core Components</h2>
+            
+            <div class="detail-card">
+                <h3>Multi-Collection Architecture</h3>
+                <p>Instead of a single users collection, the project uses separate collections for <code>customers</code> and <code>admins</code>. This provides better isolation and scalability as each account type grows.</p>
+            </div>
+
+            <div class="detail-card">
+                <h3>Account-Type Authorization</h3>
+                <p>The JWT payload includes a <code>type</code> field (customer/admin). The <code>AdminGuard</code> checks this field to grant access to administrative routes, ensuring secure separation of duties.</p>
+            </div>
+
+            <div class="detail-card">
+                <h3>Base Repository Pattern</h3>
+                <p>Both <code>CustomersRepository</code> and <code>AdminsRepository</code> extend the generic <code>BaseRepository</code>, inheriting robust CRUD functionality while maintaining type safety for their respective schemas.</p>
+            </div>
+        </section>
+
+
+        <section>
+            <h2>Technology Stack</h2>
+            <div style="margin-top: 20px;">
+                <span class="tech-pill">NestJS v11</span>
+                <span class="tech-pill">Fastify v5</span>
+                <span class="tech-pill">MongoDB / Mongoose</span>
+                <span class="tech-pill">TypeScript</span>
+                <span class="tech-pill">Passport JWT</span>
+                <span class="tech-pill">Bcrypt</span>
+                <span class="tech-pill">Pino Logging</span>
+                <span class="tech-pill">Zod Validation</span>
+            </div>
+        </section>
+
+        <footer>
+            <p>Generated for the 2nest-fastify Project Documentation.</p>
+        </footer>
+    </div>
+</body>
+</html>
