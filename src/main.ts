@@ -37,7 +37,6 @@ async function bootstrap() {
     },
   );
 
-
   app.enableCors({
     origin: clientConfig.cors.origins,
     credentials: true,
@@ -59,6 +58,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-
-
-// hellos
