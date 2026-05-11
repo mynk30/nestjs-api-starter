@@ -1,0 +1,316 @@
+{
+	"info": {
+		"name": "2nest-fastify API",
+		"description": "Postman collection for NestJS + Fastify boilerplate with customer/admin auth, health check, and protected routes.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Customer Auth",
+			"item": [
+				{
+					"name": "Customer Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Mayank Customer\",\n  \"email\": \"customer@example.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/customer/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"customer",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "Customer Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const json = pm.response.json();",
+									"",
+									"if (json && json.data && json.data.accessToken) {",
+									"  pm.environment.set('customer_token', json.data.accessToken);",
+									"  pm.environment.set('refresh_token', json.data.refreshToken);",
+									"}",
+									"",
+									"pm.test('Customer tokens saved', function () {",
+									"  pm.expect(pm.environment.get('customer_token')).to.not.be.undefined;",
+									"  pm.expect(pm.environment.get('refresh_token')).to.not.be.undefined;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/customer/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"customer",
+								"login"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Auth",
+			"item": [
+				{
+					"name": "Admin Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Mayank Admin\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/admin/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"admin",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const json = pm.response.json();",
+									"",
+									"if (json && json.data && json.data.accessToken) {",
+									"  pm.environment.set('admin_token', json.data.accessToken);",
+									"  pm.environment.set('refresh_token', json.data.refreshToken);",
+									"}",
+									"",
+									"pm.test('Admin tokens saved', function () {",
+									"  pm.expect(pm.environment.get('admin_token')).to.not.be.undefined;",
+									"  pm.expect(pm.environment.get('refresh_token')).to.not.be.undefined;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/admin/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"admin",
+								"login"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Auth Common",
+			"item": [
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const json = pm.response.json();",
+									"if (json && json.data && json.data.accessToken) {",
+									"  pm.environment.set('customer_token', json.data.accessToken);",
+									"  pm.environment.set('admin_token', json.data.accessToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Customer Protected Routes",
+			"item": [
+				{
+					"name": "Get Customer Me",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customer_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/customers/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"customers",
+								"me"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Protected Routes",
+			"item": [
+				{
+					"name": "Get Admin Me",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admins/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admins",
+								"me"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

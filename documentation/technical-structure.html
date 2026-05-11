@@ -183,7 +183,20 @@
                 <h3>Base Repository Pattern</h3>
                 <p>Both <code>CustomersRepository</code> and <code>AdminsRepository</code> extend the generic <code>BaseRepository</code>, inheriting robust CRUD functionality while maintaining type safety for their respective schemas.</p>
             </div>
+
+            <div class="detail-card">
+                <h3>Deconstructed Database Config</h3>
+                <p>Database connection details are split into <code>MONGODB_HOST</code>, <code>MONGODB_PORT</code>, and <code>MONGODB_DATABASE</code>. The <code>DatabaseModule</code> dynamically constructs the URI, allowing for easy per-environment tuning.</p>
+            </div>
+
+
+            <div class="detail-card">
+                <h3>Automatic Validation Pipes</h3>
+                <p>Incoming request data is automatically validated using <code>ValidationPipe</code> and <code>class-validator</code> decorators. This ensures that only clean, well-formatted data reaches the business services.</p>
+            </div>
         </section>
+
+
 
 
         <section>
@@ -196,8 +209,9 @@
                 <span class="tech-pill">Passport JWT</span>
                 <span class="tech-pill">Bcrypt</span>
                 <span class="tech-pill">Pino Logging</span>
-                <span class="tech-pill">Zod Validation</span>
+                <span class="tech-pill">Class-Validator</span>
             </div>
+
         </section>
 
         <footer>

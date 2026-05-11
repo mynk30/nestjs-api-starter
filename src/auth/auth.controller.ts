@@ -27,7 +27,20 @@ export class AuthController {
   async loginAdmin(@Body() loginDto: LoginDto) {
     return this.authService.loginAdmin(loginDto);
   }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body('refreshToken') refreshToken: string) {
+    return this.authService.refresh(refreshToken);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Body('refreshToken') refreshToken: string) {
+    return this.authService.logout(refreshToken);
+  }
 }
+
 
 
 

@@ -19,8 +19,15 @@ This document provides a comprehensive overview of the `2nest-fastify` project s
 │   │   ├── filters/        # Global exception filters
 │   │   ├── guards/         # Security guards (JwtAuthGuard, AdminGuard)
 │   │   └── interceptors/   # NestJS Interceptors
+│   │       ├── logging/    # Logging Interceptor
+│   │       │   └── logging.interceptor.ts
+│   │       └── transform.interceptor.ts
+
 │   ├── config/             # Application configuration files
 │   ├── database/           # Database connection and base logic
+│   │   ├── base.repository.ts # Generic repository base class
+│   │   └── database.module.ts # Mongoose connection module
+
 │   ├── customers/          # Customers feature module
 │   │   ├── schemas/        # Customer schema (customers collection)
 │   │   ├── customers.module.ts
@@ -88,3 +95,27 @@ This document provides a comprehensive overview of the `2nest-fastify` project s
 - **Logging**: Pino & `pino-pretty`
 - **Testing**: Jest
 - **Environment Management**: `@nestjs/config`
+## Configuration & Environment
+
+The project uses `.env` files (e.g., `.env.development`) managed by `@nestjs/config`.
+
+### Required Variables:
+- `MONGODB_HOST`: MongoDB server address (e.g., `localhost`)
+- `MONGODB_PORT`: MongoDB port (e.g., `27017`)
+- `MONGODB_DATABASE`: Database name
+- `JWT_SECRET`: Secret key for signing tokens
+- `PORT`: Application port (e.g., `3010`)
+- `NODE_ENV`: Environment name (`development` or `production`)
+
+## Authentication Flow (Updated)
+
+The project implements a robust JWT-based authentication flow with session control:
+
+- **Access Token**: Short-lived (15 minutes) token used for authorizing API requests.
+- **Refresh Token**: Long-lived (7 days) token stored in the database. It is used to obtain new access tokens without requiring the user to re-login.
+- **Refresh Endpoint**: `POST /auth/refresh` verifies the refresh token JWT and checks it against the database to ensure the session is still active.
+- **Logout Endpoint**: `POST /auth/logout` removes the refresh token from the database, effectively ending the session.
+- **DB Validation**: Every refresh request is validated against the database, allowing for immediate session revocation (logout).
+
+> **Note**: Logging out removes the refresh token from the database, preventing any further access token generation for that session. Existing access tokens will remain valid until they expire naturally.
+
