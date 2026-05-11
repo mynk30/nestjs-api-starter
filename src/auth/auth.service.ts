@@ -11,7 +11,7 @@ export class AuthService {
     private readonly customersService: CustomersService,
     private readonly adminsService: AdminsService,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   // Helper to generate both tokens
   private async generateTokens(payload: any) {
@@ -185,10 +185,9 @@ export class AuthService {
         await user.save();
       }
 
-      return { message: 'Logged out successfully' };
+      return payload; // Return payload so controller knows which cookie to clear
     } catch (e) {
-      // Even if token is expired, we can just return success or handle quietly
-      return { message: 'Logged out successfully' };
+      return null;
     }
   }
 }

@@ -67,12 +67,14 @@
 									"",
 									"if (json && json.data && json.data.accessToken) {",
 									"  pm.environment.set('customer_token', json.data.accessToken);",
-									"  pm.environment.set('refresh_token', json.data.refreshToken);",
 									"}",
 									"",
-									"pm.test('Customer tokens saved', function () {",
+									"pm.test('Customer access token saved', function () {",
 									"  pm.expect(pm.environment.get('customer_token')).to.not.be.undefined;",
-									"  pm.expect(pm.environment.get('refresh_token')).to.not.be.undefined;",
+									"});",
+									"",
+									"pm.test('Refresh token set in cookie', function () {",
+									"  pm.expect(pm.cookies.has('customer_refresh_token')).to.be.true;",
 									"});"
 								],
 								"type": "text/javascript"
@@ -147,12 +149,14 @@
 									"",
 									"if (json && json.data && json.data.accessToken) {",
 									"  pm.environment.set('admin_token', json.data.accessToken);",
-									"  pm.environment.set('refresh_token', json.data.refreshToken);",
 									"}",
 									"",
-									"pm.test('Admin tokens saved', function () {",
+									"pm.test('Admin access token saved', function () {",
 									"  pm.expect(pm.environment.get('admin_token')).to.not.be.undefined;",
-									"  pm.expect(pm.environment.get('refresh_token')).to.not.be.undefined;",
+									"});",
+									"",
+									"pm.test('Refresh token set in cookie', function () {",
+									"  pm.expect(pm.cookies.has('admin_refresh_token')).to.be.true;",
 									"});"
 								],
 								"type": "text/javascript"
@@ -216,7 +220,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+							"raw": "{}"
 						},
 						"url": {
 							"raw": "{{base_url}}/auth/refresh",
@@ -227,7 +231,8 @@
 								"auth",
 								"refresh"
 							]
-						}
+						},
+						"description": "Automatically reads refresh token from HttpOnly cookies."
 					}
 				},
 				{
@@ -242,7 +247,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+							"raw": "{}"
 						},
 						"url": {
 							"raw": "{{base_url}}/auth/logout",
@@ -253,7 +258,8 @@
 								"auth",
 								"logout"
 							]
-						}
+						},
+						"description": "Automatically reads and clears refresh token from HttpOnly cookies."
 					}
 				}
 			]

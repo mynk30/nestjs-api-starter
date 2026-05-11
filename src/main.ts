@@ -8,8 +8,14 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { clientConfig } from './config/client.config';
 import { ValidationPipe } from '@nestjs/common';
+import fastifyCookie from '@fastify/cookie';
+
+
+
+
 
 async function bootstrap() {
+
 
   const isProd = process.env.NODE_ENV === 'production';
 
@@ -37,6 +43,8 @@ async function bootstrap() {
     },
   );
 
+  await app.register(fastifyCookie as any);
+
   app.enableCors({
     origin: clientConfig.cors.origins,
     credentials: true,
@@ -54,7 +62,11 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new GlobalExceptionFilter());
 
+
+
   await app.listen(port);
+
+
 }
 
 bootstrap();
