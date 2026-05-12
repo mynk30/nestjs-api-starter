@@ -10,12 +10,7 @@ import { clientConfig } from './config/client.config';
 import { ValidationPipe } from '@nestjs/common';
 import fastifyCookie from '@fastify/cookie';
 
-
-
-
-
 async function bootstrap() {
-
 
   const isProd = process.env.NODE_ENV === 'production';
 
@@ -38,12 +33,16 @@ async function bootstrap() {
       logger: logger,
       disableRequestLogging: true,
     }),
-    {
-      logger: ['error', 'warn'],
-    },
+    // {
+    //   logger: ['error', 'warn'],
+    // },
   );
 
   await app.register(fastifyCookie as any);
+
+  app.getHttpAdapter().getInstance().addHook("onRequest", async (request, reply) => {
+    (request as any).startTime = Date.now();
+  });
 
   app.enableCors({
     origin: clientConfig.cors.origins,

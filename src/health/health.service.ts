@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
 @Injectable()
 export class HealthService {
   getHealth() {
     const uptimeSeconds = process.uptime();
+    throw new Error("Test Error Thrown by Me");
     return {
       status: 'ok',
       uptime: uptimeSeconds,

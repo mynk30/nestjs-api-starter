@@ -29,6 +29,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? (exceptionResponse as any).message || exception.message
         : exceptionResponse;
 
+    const duration = (request as any).startTime
+      ? Date.now() - (request as any).startTime
+      : 0;
+
+    console.error(
+      `[ERROR] ${request.method} ${request.url} ${status} - ${duration}ms - ${Array.isArray(message) ? message[0] : message}`,
+    );
+
     const errorResponse = {
       success: false,
       error: {
