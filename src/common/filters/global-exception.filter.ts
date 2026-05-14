@@ -22,7 +22,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const exceptionResponse =
       exception instanceof HttpException
         ? exception.getResponse()
-        : { message: 'Internal server error' };
+        : { message: exception.message || 'Internal server error' };
 
     const message =
       typeof exceptionResponse === 'object'

@@ -22,17 +22,17 @@ This document provides a comprehensive overview of the `2nest-fastify` project s
 │   │       ├── logging/    # Logging Interceptor
 │   │       │   └── logging.interceptor.ts
 │   │       └── transform.interceptor.ts
-
 │   ├── config/             # Application configuration files
 │   ├── database/           # Database connection and base logic
 │   │   ├── base.repository.ts # Generic repository base class
 │   │   └── database.module.ts # Mongoose connection module
-
 │   ├── customers/          # Customers feature module
 │   │   ├── schemas/        # Customer schema (customers collection)
+│   │   ├── dto/            # CreateCustomerDto, UpdateCustomerDto
 │   │   ├── customers.module.ts
 │   │   ├── customers.repository.ts
-│   │   ├── customers.controller.ts
+│   │   ├── customers.controller.ts # Customer-facing routes (/customers/*)
+│   │   ├── admin-customer.controller.ts # Admin-facing routes (/admin/customers/*)
 │   │   └── customers.service.ts
 │   ├── admins/             # Admins feature module
 │   │   ├── schemas/        # Admin schema (admins collection)
@@ -46,11 +46,17 @@ This document provides a comprehensive overview of the `2nest-fastify` project s
 │   │   ├── auth.module.ts
 │   │   ├── auth.controller.ts # /auth/customer/* and /auth/admin/*
 │   │   └── auth.service.ts # Dual registration/login flows
+│   ├── health/             # Health check module
+│   │   ├── health.module.ts
+│   │   ├── health.controller.ts
+│   │   └── health.service.ts
 │   ├── main.ts             # Application entry point
 │   ├── app.module.ts       # Root module
 │   ├── app.controller.ts   # Main controller
 │   └── app.service.ts      # Main service
 ├── test/                   # End-to-end (E2E) tests
+├── ecosystem.dev.config.js # PM2 development configuration
+├── postman_collection.json # Postman API collection
 ├── package.json            # Project dependencies
 └── README.md               # Project landing page
 ```
@@ -64,12 +70,15 @@ This document provides a comprehensive overview of the `2nest-fastify` project s
     - **CORS**: Configured via `client.config.ts`.
     - **Global Interceptors**: `LoggingInterceptor` and `TransformInterceptor`.
     - **Global Filters**: `GlobalExceptionFilter` for uniform error handling.
-- **`app.module.ts`**: The root module. Imports `ConfigModule`, `DatabaseModule`, `CustomersModule`, `AdminsModule`, and `AuthModule`.
+- **`app.module.ts`**: The root module. Imports `ConfigModule`, `DatabaseModule`, `CustomersModule`, `AdminsModule`, `AuthModule`, and `HealthModule`.
 
 ### `src/customers/`
 - **`schemas/customer.schema.ts`**: Defines the `Customer` entity and its `customers` collection.
+- **`dto/`**: Contains `CreateCustomerDto` for creation and `UpdateCustomerDto` for profile/admin updates.
 - **`customers.repository.ts`**: Extends `BaseRepository` for customer data access.
-- **`customers.controller.ts`**: Contains `/customers/me` for authenticated profile retrieval.
+- **`customers.controller.ts`**: Handles customer-owned actions: `/customers/me` (Get/Update profile, Delete account) and `/customers/change-password`.
+- **`admin-customer.controller.ts`**: Handles admin management of customers: `/admin/customers` (Get all, Get by ID, Update, Delete).
+- **`customers.service.ts`**: Centralized logic for customer management, including password hashing and data filtering.
 
 ### `src/admins/`
 - **`schemas/admin.schema.ts`**: Defines the `Admin` entity and its `admins` collection.
@@ -81,9 +90,18 @@ This document provides a comprehensive overview of the `2nest-fastify` project s
 - **`auth.controller.ts`**: Authentication endpoints separated by account type (`/auth/customer/*` and `/auth/admin/*`).
 - **`strategies/jwt.strategy.ts`**: Validates tokens and returns the account `type` (customer/admin) in the user object.
 
+### `src/health/`
+- **`health.controller.ts`**: Provides a `/health` endpoint for monitoring application status.
+- **`health.service.ts`**: Contains logic for checking database connectivity and overall system health.
+
 ### `src/common/`
 - **`guards/jwt-auth.guard.ts`**: Ensures the request has a valid JWT token.
 - **`guards/admin.guard.ts`**: Ensures the authenticated user has the `type: 'admin'` attribute.
+- **`filters/global-exception.filter.ts`**: Catches all unhandled exceptions and returns a standardized JSON response.
+
+### Root Files
+- **`ecosystem.dev.config.js`**: PM2 configuration for development, managing environment variables and application restarts.
+- **`postman_collection.json`**: A pre-configured Postman collection for testing all API endpoints.
 
 ## Technology Stack
 
@@ -121,7 +139,6 @@ The project uses a hybrid token storage strategy for maximum security:
 
 ## API Documentation
 
-- **Swagger UI**: Accessible at `/docs` (Interactive testing)
 - **Static Docs**: Accessible at `/documentation/index.html`
 
 

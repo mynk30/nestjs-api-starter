@@ -13,7 +13,7 @@ import { AdminsModule } from '../admins/admins.module';
     AdminsModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secret',
+      secret: process.env.JWT_ACCESS_SECRET || 'secret',
       signOptions: { expiresIn: '7d' },
     }),
   ],

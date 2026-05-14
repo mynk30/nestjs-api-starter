@@ -16,4 +16,12 @@ export class CustomersRepository extends BaseRepository<CustomerDocument> {
   async findByEmail(email: string): Promise<CustomerDocument | null> {
     return this.findOne({ email });
   }
+
+  async findAllCustomers(): Promise<CustomerDocument[]> {
+    return this.customerModel.find().exec();
+  }
+
+  async findCustomerById(id: string): Promise<CustomerDocument | null> {
+    return this.customerModel.findById(id).exec();
+  }
 }

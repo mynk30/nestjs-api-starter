@@ -562,19 +562,19 @@ Use this every time you start a new client project.
 | NestJS + Fastify scaffold | ✅ Done |
 | Pino logging + LoggingInterceptor | ✅ Done |
 | ConfigModule wired | ✅ Done |
-| `config/` — Zod env validation | 🔲 Next |
-| `database/` — Mongoose module + BaseRepository | 🔲 Pending |
-| `common/` — guards, filters, pipes, interceptors | 🔲 Pending |
-| `auth/` — JWT + refresh tokens | 🔲 Pending |
-| `users/` — customer profile routes | 🔲 Pending |
-| `admin/` — admin CRUD routes | 🔲 Pending |
+| `config/` — Zod env validation | ✅ Done |
+| `database/` — Mongoose module + BaseRepository | ✅ Done |
+| `common/` — guards, filters, pipes, interceptors | ✅ Done |
+| `auth/` — JWT + refresh tokens | ✅ Done |
+| `customers/` — customer profile routes | ✅ Done |
+| `admins/` — admin CRUD routes | ✅ Done |
 | `pages/` — CMS pages | 🔲 Pending |
 | `posts/` — blog content | 🔲 Pending |
 | `products/` — product catalogue | 🔲 Pending |
 | `orders/` — order management | 🔲 Pending |
 | `media/` — file upload | 🔲 Pending |
-| `health/` — health check | 🔲 Pending |
-| Docker + Compose | 🔲 Pending |
+| `health/` — health check | ✅ Done |
+| Docker + Compose | ✅ Done |
 | GitHub Actions CI | 🔲 Pending |
 
 ---

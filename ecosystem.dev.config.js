@@ -41,7 +41,7 @@ module.exports = {
 
             log_file: './logs/dev.log',
             merge_logs: true,
-            time: true,
+            time: false,
         },
     ],
 };

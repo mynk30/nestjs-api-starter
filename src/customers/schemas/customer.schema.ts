@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true, collection: 'customers' })
 export class Customer {
@@ -14,6 +14,33 @@ export class Customer {
 
   @Prop()
   refreshToken?: string;
+
+  @Prop()
+  featured_image?: string;
+
+  @Prop()
+  phone?: string;
+
+  @Prop()
+  countryCode?: string;
+
+  @Prop()
+  alternatePhone?: string;
+
+  @Prop()
+  alternateCountryCode?: string;
+
+  @Prop({ type: Number })
+  otp: number;
+
+  @Prop({ type: Date })
+  otpExpiry: Date;
+
+  @Prop({ type: Boolean, default: true })
+  isActive: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'Admin' })
+  createdBy: Types.ObjectId;
 }
 
 

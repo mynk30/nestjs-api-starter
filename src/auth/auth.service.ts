@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { CustomersService } from '../customers/customers.service';
 import { AdminsService } from '../admins/admins.service';
+import { JwtPayload } from './interface/jwt.interface';
 
 @Injectable()
 export class AuthService {
@@ -11,12 +12,12 @@ export class AuthService {
     private readonly customersService: CustomersService,
     private readonly adminsService: AdminsService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   // Helper to generate both tokens
-  private async generateTokens(payload: any) {
+  private async generateTokens(payload: JwtPayload) {
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'access-secret',
+      secret: process.env.JWT_ACCESS_SECRET || 'access-secret',
       expiresIn: '15m',
     });
 
@@ -61,7 +62,7 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const payload = { sub: customer._id, email: customer.email, type: 'customer' };
+    const payload: JwtPayload = { id: customer._id.toString(), email: customer.email, type: 'customer' };
     const { accessToken, refreshToken } = await this.generateTokens(payload);
 
     // Store refresh token in DB
@@ -112,7 +113,7 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const payload = { sub: admin._id, email: admin.email, type: 'admin' };
+    const payload: JwtPayload = { id: admin._id.toString(), email: admin.email, type: 'admin' };
     const { accessToken, refreshToken } = await this.generateTokens(payload);
 
     // Store refresh token in DB
@@ -154,10 +155,12 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
+      console.log("THIW IS THE USER: ", user)
+
       // 4. Generate new access token
-      const newPayload = { sub: user._id, email: user.email, type: payload.type };
+      const newPayload: JwtPayload = { id: user._id, email: user.email, type: payload.type };
       const accessToken = this.jwtService.sign(newPayload, {
-        secret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'access-secret',
+        secret: process.env.JWT_ACCESS_SECRET || 'access-secret',
         expiresIn: '15m',
       });
 
