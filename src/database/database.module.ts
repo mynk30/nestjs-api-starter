@@ -10,8 +10,9 @@ import { ConfigService } from '@nestjs/config';
                 const host = configService.get<string>('MONGODB_HOST');
                 const port = configService.get<string>('MONGODB_PORT');
                 const dbName = configService.get<string>('MONGODB_DATABASE');
+                const uri = configService.get<string>('MONGODB_URI');
                 return {
-                    uri: `mongodb://${host}:${port}/${dbName}`,
+                    uri: uri || `mongodb://${host}:${port}/${dbName}`,
                 };
             },
             inject: [ConfigService],
