@@ -26,6 +26,7 @@ async function bootstrap() {
     };
 
   const port = process.env.PORT || 3000;
+  console.log("PORT : ", port);
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
@@ -33,9 +34,6 @@ async function bootstrap() {
       logger: logger,
       disableRequestLogging: true,
     }),
-    // {
-    //   logger: ['error', 'warn'],
-    // },
   );
 
   await app.register(fastifyCookie as any);

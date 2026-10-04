@@ -9,8 +9,8 @@ import { AdminsModule } from '../admins/admins.module';
 
 @Module({
   imports: [
-    CustomersModule,
     AdminsModule,
+    CustomersModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_ACCESS_SECRET || 'secret',
