@@ -1,584 +1,428 @@
 # 2nest-fastify
 
-A production-ready, clone-and-go NestJS + Fastify boilerplate for rapid client project delivery. Supports **informative sites**, **e-commerce platforms**, and **admin panels** — all from a single API server.
+A production-ready, high-performance **NestJS (v11) + Fastify (v5)** boilerplate configured with **MongoDB (Mongoose)**, dual-collection authentication (**Customer** & **Admin**), generic repository patterns, and standardized response envelopes.
 
-Clone → update `client.config.ts` + `.env` → build client-specific features. No re-scaffolding ever again.
-
----
-
-## Table of contents
-
-- [What this boilerplate gives you](#what-this-boilerplate-gives-you)
-- [Tech stack](#tech-stack)
-- [Project structure](#project-structure)
-- [Architecture decisions](#architecture-decisions)
-- [API reference](#api-reference)
-- [Environment variables](#environment-variables)
-- [Getting started](#getting-started)
-- [Scripts](#scripts)
-- [Module pattern](#module-pattern)
-- [Client config — the one file you change per project](#client-config)
-- [Clone checklist for a new client](#clone-checklist)
+Designed as a clone-and-go foundation for modern web applications, e-commerce APIs, and SaaS backends.
 
 ---
 
-## What this boilerplate gives you
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Architecture & Design Decisions](#architecture--design-decisions)
+  - [Multi-Collection Domain Architecture](#multi-collection-domain-architecture)
+  - [Hybrid Authentication & Token Storage Strategy](#hybrid-authentication--token-storage-strategy)
+  - [Standardized Response & Error Envelopes](#standardized-response--error-envelopes)
+  - [Generic Base Repository Pattern](#generic-base-repository-pattern)
+- [API Reference](#api-reference)
+  - [System Health](#system-health)
+  - [Authentication](#authentication)
+  - [Customer Routes](#customer-routes)
+  - [Admin Routes](#admin-routes)
+- [Environment Configuration](#environment-configuration)
+- [Getting Started](#getting-started)
+- [Available Scripts](#available-scripts)
+- [Developer Tooling & Postman](#developer-tooling--postman)
+- [Adding New Feature Modules](#adding-new-feature-modules)
+- [License](#license)
+
+---
+
+## Features
 
 | Capability | Detail |
 |---|---|
-| Authentication | JWT access tokens + refresh token rotation, bcrypt password hashing |
-| Authorisation | Role-based access control — `customer` and `admin` roles out of the box |
-| Base CRUD | Generic `BaseRepository` with `findAll`, `findById`, `create`, `update`, `delete`, `count` — extend per module, never rewrite |
-| Database | Mongoose + MongoDB with a clean module and schema-per-feature pattern |
-| Validation | Zod validation pipe on every request body — structured `400` errors listing every invalid field |
-| Security | `@fastify/helmet` (security headers), `@nestjs/throttler` (rate limiting), CORS per-client |
-| Logging | Pino + `pino-pretty` in development, structured JSON in production. Global `LoggingInterceptor` already wired |
-| Error handling | Global exception filter — every error returns the same JSON shape with request ID |
-| Response shape | Global `TransformInterceptor` wraps every success response in a consistent envelope |
-| Config | `@nestjs/config` + Zod schema validation — app refuses to start if any required env var is missing |
-| Admin panel APIs | Full CRUD on all resources under `/admin/*`, guarded by JWT + admin role |
-| Media upload | Pluggable media service for cloud storage (Cloudinary / S3) |
-| Health check | `GET /health` for Docker, uptime monitors, and load balancers |
-| Testing | Jest + Supertest, in-memory MongoDB via `mongodb-memory-server` for e2e tests |
-| Docker | Multi-stage `Dockerfile` for production, `Dockerfile.dev` with hot reload, `docker-compose.yml` for local dev |
-| CI/CD | GitHub Actions workflow — lint → test → build on every push and PR |
+| **High Performance Engine** | Fastify v5 HTTP adapter via `@nestjs/platform-fastify` with built-in Pino logging |
+| **Multi-Collection Architecture** | Dedicated MongoDB collections and schemas for `customers` and `admins` |
+| **Hybrid Authentication** | Short-lived JWT Access Tokens (Memory/Header) + Secure `HttpOnly` Refresh Token Cookies |
+| **Server-Side Session Control** | Refresh tokens saved in MongoDB for instant invalidation and token revocation on logout |
+| **Role-Based Guards** | `JwtAuthGuard` (Bearer extraction) and `AdminGuard` (checks `req.user.type === 'admin'`) |
+| **Generic Repository Layer** | `BaseRepository<T>` providing pre-built CRUD (`create`, `findAll`, `findOne`, `findById`, `updateById`, `deleteById`, `count`, `exists`) |
+| **Strict Request Validation** | Global `ValidationPipe` with `class-validator` and `class-transformer` (auto-strip & whitelist) |
+| **Standardized Responses** | `TransformInterceptor` wraps all successful responses in `{ success: true, data, meta: { timestamp } }` |
+| **Centralized Error Handling** | `GlobalExceptionFilter` guarantees unified error envelopes `{ success: false, error: { code, message, statusCode }, meta }` |
+| **Request Performance Logging** | Fastify hook + `LoggingInterceptor` logging method, path, status, and duration (ms) |
+| **Dynamic Configuration** | `@nestjs/config` loading environment-specific configs (`.env.development`, `.env.production`) |
+| **Postman API Collection** | Included `postman_collection.json` with pre-written test scripts for automatic token and cookie handling |
+| **Process Management** | Ready-to-use PM2 configuration (`ecosystem.dev.config.js`) with file watching and log rotation |
 
 ---
 
-## Tech stack
+## Tech Stack
 
-| Layer | Technology | Reason |
-|---|---|---|
-| Framework | NestJS v11 + TypeScript | Opinionated module structure, dependency injection, scales cleanly |
-| HTTP engine | Fastify v5 | Significantly faster than Express, production-proven |
-| Database | MongoDB + Mongoose | Flexible documents — suits both structured and semi-structured client data |
-| Auth | JWT + Passport.js + bcrypt | Stateless tokens, works with any frontend |
-| Validation | Zod | Schema-first, used for both request DTOs and env config |
-| Logging | Pino + pino-pretty | Fastest Node.js logger, structured JSON output in production |
-| Rate limiting | @nestjs/throttler | Protects all routes from abuse, configurable per-route |
-| Security | @fastify/helmet | Sets HTTP security headers in one line |
-| Testing | Jest + Supertest + mongodb-memory-server | Unit + e2e without a real database |
-| Containers | Docker + Docker Compose | Consistent environments from laptop to production |
-| CI/CD | GitHub Actions | Automated lint, test, build pipeline |
-| Package manager | pnpm | Faster installs, strict dependency resolution |
+| Layer | Technology | Version | Purpose |
+|---|---|---|---|
+| **Framework** | NestJS | `^11.0.1` | Modular structure, dependency injection, and decorators |
+| **HTTP Engine** | Fastify | `^5.8.5` | High-throughput, low-overhead HTTP layer |
+| **Fastify Adapter** | `@nestjs/platform-fastify` | `^11.1.19` | NestJS integration with Fastify |
+| **Cookies** | `@fastify/cookie` | `^11.0.2` | Fastify plugin for HttpOnly cookie parsing and setting |
+| **Database** | MongoDB + Mongoose | `^9.6.1` | Document storage with schemas and timestamps |
+| **Database Integration** | `@nestjs/mongoose` | `^11.0.4` | NestJS Mongoose module |
+| **Authentication** | Passport.js + `@nestjs/jwt` | `^11.0.2` | JWT generation, verification, and passport strategy |
+| **Password Security** | bcrypt | `^6.0.0` | Secure password hashing with salt generation |
+| **Validation** | class-validator + class-transformer | `^0.15.1` | Declarative DTO validation pipes |
+| **Logging** | Pino + pino-pretty | `^13.1.3` | High-performance JSON logger and terminal formatting |
+| **Configuration** | `@nestjs/config` | `^4.0.4` | Environment variable loader per environment |
+| **Package Manager** | npm | - | Standard package and dependency management |
 
 ---
 
-## Project structure
+## Project Structure
 
-```
+```text
 2nest-fastify/
-│
+├── documentation/                  # Architecture and API documentation
+│   ├── index.html                  # Interactive visual API documentation
+│   ├── technical-structure.html    # Visual technical architecture breakdown
+│   └── structure.md                # Complete file and architecture reference
 ├── src/
-│   ├── main.ts                         # Bootstrap — Fastify, Pino, global middleware
-│   ├── app.module.ts                   # Root module — imports everything
-│   ├── app.controller.ts               # GET / — welcome route
-│   ├── app.service.ts                  # Root service
+│   ├── main.ts                     # Entry point: Fastify adapter, cookies, filters, interceptors
+│   ├── app.module.ts               # Root module importing feature & core modules
+│   ├── app.controller.ts           # Root welcome route (GET /)
+│   ├── app.service.ts              # Root service
 │   │
 │   ├── config/
-│   │   ├── app.config.ts               # PORT, NODE_ENV (Zod validated)
-│   │   ├── database.config.ts          # MONGO_URI (Zod validated)
-│   │   ├── jwt.config.ts               # JWT secrets and expiry (Zod validated)
-│   │   └── client.config.ts            # ← THE ONE FILE YOU CHANGE PER CLIENT
+│   │   └── client.config.ts        # Client CORS configuration
 │   │
-│   ├── common/
-│   │   ├── decorators/
-│   │   │   ├── current-user.decorator.ts     # @CurrentUser() param decorator
-│   │   │   └── roles.decorator.ts            # @Roles('admin') route decorator
+│   ├── common/                     # Cross-cutting concerns & shared infrastructure
 │   │   ├── filters/
-│   │   │   └── global-exception.filter.ts    # Catches all errors, consistent JSON shape
+│   │   │   └── global-exception.filter.ts    # Standardizes all error responses
 │   │   ├── guards/
-│   │   │   ├── jwt-auth.guard.ts             # Validates JWT on protected routes
-│   │   │   └── roles.guard.ts                # Enforces role after JWT guard
-│   │   ├── interceptors/
-│   │   │   ├── logging/
-│   │   │   │   ├── logging.interceptor.ts        # Logs method, URL, status, duration
-│   │   │   │   └── logging.interceptor.spec.ts   # Unit tests
-│   │   │   └── transform.interceptor.ts      # Wraps responses in { success, data, meta }
-│   │   ├── middleware/
-│   │   │   └── request-id.middleware.ts      # Attaches UUID to every request
-│   │   ├── pipes/
-│   │   │   └── zod-validation.pipe.ts        # Validates request bodies with Zod
-│   │   └── types/
-│   │       ├── api-response.type.ts          # Success + error envelope types
-│   │       ├── pagination.type.ts            # Paginated request + response types
-│   │       └── jwt-payload.type.ts           # Decoded JWT payload shape
+│   │   │   ├── jwt-auth.guard.ts             # Validates Bearer access tokens
+│   │   │   └── admin.guard.ts                # Restricts route to user.type === 'admin'
+│   │   └── interceptors/
+│   │       ├── logging/
+│   │       │   ├── logging.interceptor.ts    # Logs request duration and status
+│   │       │   └── logging.interceptor.spec.ts
+│   │       └── transform.interceptor.ts      # Wraps success payloads into standard envelope
 │   │
-│   ├── database/
-│   │   ├── database.module.ts              # Global Mongoose connection module
-│   │   └── base.repository.ts             # Generic CRUD — extend per feature
+│   ├── database/                   # Database layer
+│   │   ├── database.module.ts      # Global Mongoose connection module
+│   │   └── base.repository.ts      # Generic repository with complete CRUD operations
 │   │
-│   ├── auth/
-│   │   ├── auth.module.ts
-│   │   ├── auth.controller.ts             # /auth/register, /login, /refresh, /logout
-│   │   ├── auth.service.ts                # Token logic, password hashing, refresh rotation
-│   │   ├── strategies/
-│   │   │   ├── jwt.strategy.ts            # Validates access token
-│   │   │   └── jwt-refresh.strategy.ts    # Validates refresh token
-│   │   └── dto/
-│   │       ├── login.dto.ts
-│   │       ├── register.dto.ts
-│   │       └── refresh-token.dto.ts
+│   ├── auth/                       # Authentication feature module
+│   │   ├── auth.module.ts          # Configures JwtModule and Passport
+│   │   ├── auth.controller.ts      # /auth/customer/*, /auth/admin/*, /auth/refresh, /auth/logout
+│   │   ├── auth.service.ts         # Dual auth logic, token issuance, cookie handling
+│   │   ├── dto/
+│   │   │   └── auth.dto.ts         # RegisterDto, LoginDto (class-validator)
+│   │   ├── interface/
+│   │   │   └── jwt.interface.ts    # JwtPayload interface ({ id, email, type })
+│   │   └── strategies/
+│   │       └── jwt.strategy.ts     # Passport JWT Bearer extraction strategy
 │   │
-│   ├── users/
-│   │   ├── users.module.ts
-│   │   ├── users.controller.ts            # /users/me — own profile only
-│   │   ├── users.service.ts
-│   │   ├── users.repository.ts            # Extends BaseRepository<User>
+│   ├── customers/                  # Customer feature module
+│   │   ├── customers.module.ts     # Customer schemas, controllers, and services
+│   │   ├── customers.controller.ts # Customer self-service: /customers/me, change-password
+│   │   ├── admin-customer.controller.ts # Admin customer management: /admin/customers/*
+│   │   ├── customers.service.ts    # Customer business logic and password hashing
+│   │   ├── customers.repository.ts # Extends BaseRepository<CustomerDocument>
 │   │   ├── schemas/
-│   │   │   └── user.schema.ts             # User Mongoose schema
+│   │   │   └── customer.schema.ts  # Customer Mongoose schema (customers collection)
 │   │   └── dto/
-│   │       ├── create-user.dto.ts
-│   │       └── update-user.dto.ts
+│   │       ├── create-customer.dto.ts
+│   │       └── update-customer.dto.ts
 │   │
-│   ├── admin/
-│   │   ├── admin.module.ts
-│   │   ├── admin.controller.ts            # /admin/* — JWT + admin role required
-│   │   ├── admin.service.ts
-│   │   └── dto/
-│   │       └── admin-update-user.dto.ts
+│   ├── admins/                     # Admin feature module
+│   │   ├── admins.module.ts        # Admin schema, controller, repository, service
+│   │   ├── admins.controller.ts    # Protected admin profile: /admins/me
+│   │   ├── admins.service.ts       # Admin queries and creation logic
+│   │   ├── admins.repository.ts    # Extends BaseRepository<AdminDocument>
+│   │   └── schemas/
+│   │       └── admin.schema.ts     # Admin Mongoose schema (admins collection)
 │   │
-│   ├── pages/                             # Informative site — CMS pages
-│   │   ├── pages.module.ts
-│   │   ├── pages.controller.ts            # GET /pages, GET /pages/:slug (public)
-│   │   ├── pages.service.ts
-│   │   ├── pages.repository.ts
-│   │   ├── schemas/
-│   │   │   └── page.schema.ts
-│   │   └── dto/
-│   │       ├── create-page.dto.ts
-│   │       └── update-page.dto.ts
-│   │
-│   ├── posts/                             # Blog / content marketing
-│   │   ├── posts.module.ts
-│   │   ├── posts.controller.ts            # GET /posts, GET /posts/:slug (public)
-│   │   ├── posts.service.ts
-│   │   ├── posts.repository.ts
-│   │   ├── schemas/
-│   │   │   └── post.schema.ts
-│   │   └── dto/
-│   │       ├── create-post.dto.ts
-│   │       └── update-post.dto.ts
-│   │
-│   ├── products/                          # E-commerce — product catalogue
-│   │   ├── products.module.ts
-│   │   ├── products.controller.ts         # GET /products, GET /products/:id (public)
-│   │   ├── products.service.ts
-│   │   ├── products.repository.ts
-│   │   ├── schemas/
-│   │   │   └── product.schema.ts
-│   │   └── dto/
-│   │       ├── create-product.dto.ts
-│   │       └── update-product.dto.ts
-│   │
-│   ├── orders/                            # E-commerce — customer orders
-│   │   ├── orders.module.ts
-│   │   ├── orders.controller.ts           # POST /orders, GET /orders (JWT required)
-│   │   ├── orders.service.ts
-│   │   ├── orders.repository.ts
-│   │   ├── schemas/
-│   │   │   └── order.schema.ts
-│   │   └── dto/
-│   │       ├── create-order.dto.ts
-│   │       └── update-order.dto.ts
-│   │
-│   ├── media/                             # File upload (Cloudinary / S3)
-│   │   ├── media.module.ts
-│   │   ├── media.controller.ts            # POST /media/upload (admin only)
-│   │   └── media.service.ts
-│   │
-│   └── health/
+│   └── health/                     # System health check module
 │       ├── health.module.ts
-│       └── health.controller.ts           # GET /health (public, no auth)
+│       ├── health.controller.ts    # GET /health
+│       └── health.service.ts       # System uptime, environment, and timestamp calculation
 │
-├── test/
-│   ├── app.e2e-spec.ts                    # Root route e2e test (existing)
-│   ├── jest-e2e.json                      # Jest e2e config (existing)
-│   ├── setup.ts                           # In-memory MongoDB, global test config
-│   └── auth/
-│       └── auth.e2e-spec.ts               # Full auth flow e2e test
+├── test/                           # End-to-end and integration tests
+│   ├── app.e2e-spec.ts             # Application E2E test
+│   └── jest-e2e.json               # E2E test configuration
 │
-├── docker/
-│   ├── Dockerfile                         # Multi-stage production build
-│   └── Dockerfile.dev                     # Dev image with hot reload
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml                         # Lint → Test → Build pipeline
-│
-├── documentation/
-│   ├── structure.md                       # Original scaffold overview
-│   └── FOLDER_STRUCTURE.md               # Full folder explanation (detailed)
-│
-├── docker-compose.yml                     # Local: API + MongoDB + Redis
-├── docker-compose.prod.yml                # Production overrides
-├── .env.example                           # Template — copy to .env
-├── .env                                   # Secrets — never committed
-├── .gitignore
-├── .prettierrc
-├── eslint.config.mjs
-├── nest-cli.json
-├── package.json
-├── pnpm-lock.yaml
-├── tsconfig.json
-├── tsconfig.build.json
-└── README.md
+├── .env.development               # Development environment variables
+├── .env.production                # Production environment template
+├── ecosystem.dev.config.js         # PM2 development runner configuration
+├── postman_collection.json         # Complete Postman collection with test assertions
+├── package.json                    # Project dependencies and npm scripts
+├── tsconfig.json                   # TypeScript configuration
+└── README.md                       # Project documentation
 ```
 
 ---
 
-## Architecture decisions
+## Architecture & Design Decisions
 
-### Consistent response shape
+### Multi-Collection Domain Architecture
 
-Every API response — success or error — returns the same JSON envelope. No guesswork on the frontend.
+Rather than overloading a single `users` collection with complex role discriminator columns, this boilerplate separates identities into two distinct collections:
+- **`customers` Collection**: Stores customer credentials, contact details (`phone`, `countryCode`, `alternatePhone`), status flags (`isActive`), profile avatars, and refresh tokens.
+- **`admins` Collection**: Stores administrative staff credentials and refresh tokens.
 
-**Success:**
+Both models integrate seamlessly with authentication: JWT payloads carry an account `type` (`'customer' | 'admin'`).
+
+### Hybrid Authentication & Token Storage Strategy
+
+To safeguard against both **Cross-Site Scripting (XSS)** and **Cross-Site Request Forgery (CSRF)**:
+
+1. **Access Token (Short-Lived, 15 Minutes)**:
+   - Returned directly in the response payload body `{ accessToken, user }`.
+   - The frontend stores this in **memory** (e.g., in React/Vue state or memory store) and sends it as a `Bearer <token>` in the `Authorization` header.
+2. **Refresh Token (Long-Lived, 7 Days)**:
+   - Stored in a secure **`HttpOnly` Cookie** (`customer_refresh_token` or `admin_refresh_token`).
+   - Browser scripts cannot access this cookie, defending against XSS credential exfiltration.
+   - Also persisted in MongoDB on the corresponding user record.
+3. **Session Invalidation & Logout**:
+   - `POST /auth/refresh` reads the cookie, verifies token signature, and validates that it matches the token in the database.
+   - `POST /auth/logout` sets the database `refreshToken` to `null` and clears the cookie via `@fastify/cookie`.
+
+### Standardized Response & Error Envelopes
+
+Every API route returns a predictable JSON structure for frontends to consume:
+
+#### Success Response (via `TransformInterceptor`):
 ```json
 {
   "success": true,
-  "data": { },
+  "data": {
+    "id": "6714a5ef8c13...",
+    "email": "customer@example.com",
+    "name": "Jane Doe"
+  },
   "meta": {
-    "timestamp": "2026-05-09T10:00:00Z",
-    "requestId": "a1b2c3d4-..."
+    "timestamp": "2026-10-20T13:30:00.000Z"
   }
 }
 ```
 
-**Error:**
+#### Error Response (via `GlobalExceptionFilter`):
 ```json
 {
   "success": false,
   "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "email must be a valid email",
+    "code": "BadRequestException",
+    "message": "Password must be at least 6 characters long",
     "statusCode": 400
   },
   "meta": {
-    "timestamp": "2026-05-09T10:00:00Z",
-    "requestId": "a1b2c3d4-..."
+    "timestamp": "2026-10-20T13:30:00.000Z",
+    "path": "/auth/customer/register"
   }
 }
 ```
 
-### One backend, three API namespaces
+### Generic Base Repository Pattern
 
-The same NestJS server handles all three project types. Routes are separated by namespace and role — not by separate servers.
-
-```
-/auth/*          Public — no auth required
-/pages/*         Public — informative site content
-/posts/*         Public — blog content
-/products/*      Public — product catalogue
-/orders/*        Protected — customer JWT required
-/users/me        Protected — customer JWT required
-/media/*         Protected — admin role required
-/admin/*         Protected — admin role required
-/health          Public — uptime check
-```
-
-### Admin is not a separate server
-
-The admin frontend hits `/admin/products`, `/admin/orders`, `/admin/users`. The customer app hits `/products`, `/orders`, `/users/me`. Same MongoDB collections, same Mongoose models, different guards. One server to deploy and maintain per client.
-
-### Env validation at startup
-
-`app.config.ts`, `database.config.ts`, and `jwt.config.ts` each parse and validate their environment variables using Zod when the app boots. If a variable is missing or the wrong type, the app throws immediately with the exact variable name. No silent runtime failures from a missing `.env` key.
-
-### Generic base repository
+All domain repositories extend `BaseRepository<T extends Document>` from `src/database/base.repository.ts`, eliminating boilerplate database code:
 
 ```typescript
-// Every repository extends this — never write CRUD again
-class BaseRepository<T> {
-  findAll(filter?, pagination?)   // paginated list
-  findById(id)                    // by MongoDB _id
-  findOne(filter)                 // by any field
-  create(data)                    // insert document
-  updateById(id, data)            // partial update
-  deleteById(id)                  // remove document
-  exists(filter)                  // boolean check
-  count(filter)                   // count documents
+export abstract class BaseRepository<T extends Document> {
+  create(data: any): Promise<T>
+  findAll(filter?: QueryFilter<T>, options?: QueryOptions): Promise<T[]>
+  findOne(filter: QueryFilter<T>, options?: QueryOptions): Promise<T | null>
+  findById(id: string, options?: QueryOptions): Promise<T | null>
+  updateById(id: string, data: UpdateQuery<T>, options?: QueryOptions): Promise<T | null>
+  deleteById(id: string, options?: QueryOptions): Promise<T | null>
+  count(filter?: QueryFilter<T>): Promise<number>
+  exists(filter: QueryFilter<T>): Promise<boolean>
 }
 ```
 
 ---
 
-## API reference
+## API Reference
 
-### Auth — public
+### System Health
 
-```
-POST  /auth/register      Register a new user account
-POST  /auth/login         Login — returns access token + refresh token
-POST  /auth/refresh       Exchange refresh token for new access token
-POST  /auth/logout        Revoke refresh token
-```
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/health` | None | Returns uptime, human-readable uptime, timestamp, and environment |
+| `GET` | `/` | None | Welcome greeting |
 
-### Customer — JWT required
+### Authentication
 
-```
-GET    /users/me           Get own profile
-PATCH  /users/me           Update own profile
-DELETE /users/me           Delete own account
+| Method | Endpoint | Body | Description |
+|---|---|---|---|
+| `POST` | `/auth/customer/register` | `{ name, email, password }` | Registers a customer account |
+| `POST` | `/auth/customer/login` | `{ email, password }` | Authenticates customer, returns `accessToken` & sets `customer_refresh_token` cookie |
+| `POST` | `/auth/admin/register` | `{ name, email, password }` | Registers an admin account |
+| `POST` | `/auth/admin/login` | `{ email, password }` | Authenticates admin, returns `accessToken` & sets `admin_refresh_token` cookie |
+| `POST` | `/auth/refresh` | None (reads cookie) | Issues new `accessToken` from valid refresh cookie |
+| `POST` | `/auth/logout` | None (reads cookie) | Clears refresh token in database and expires the HttpOnly cookie |
 
-POST   /orders             Place a new order
-GET    /orders             Get own order history
-GET    /orders/:id         Get a single order
-```
+### Customer Routes
 
-### Public content
+| Method | Endpoint | Auth Guard | Description |
+|---|---|---|---|
+| `GET` | `/customers/me` | `JwtAuthGuard` | Fetch current customer profile |
+| `PATCH` | `/customers/me` | `JwtAuthGuard` | Update current customer profile |
+| `DELETE` | `/customers/me` | `JwtAuthGuard` | Deactivate own customer account |
+| `PATCH` | `/customers/change-password` | `JwtAuthGuard` | Change password (`{ oldPassword, newPassword }`) |
+| `POST` | `/customers` | `JwtAuthGuard` + `AdminGuard` | Admin-created customer profile |
 
-```
-GET   /pages               List published pages
-GET   /pages/:slug         Get page by slug
+### Admin Routes
 
-GET   /posts               List published posts (paginated)
-GET   /posts/:slug         Get post by slug
-GET   /posts/category/:cat Posts filtered by category
-
-GET   /products            List products (paginated, filterable)
-GET   /products/:id        Get product detail
-GET   /products/search     Full-text search (?q=)
-```
-
-### Admin — JWT + admin role required
-
-```
-GET    /admin/users              List all users (paginated)
-GET    /admin/users/:id          Get user by ID
-PATCH  /admin/users/:id          Update user (role, status)
-DELETE /admin/users/:id          Delete user
-
-GET    /admin/products           List all products including drafts
-POST   /admin/products           Create product
-PATCH  /admin/products/:id       Update product
-DELETE /admin/products/:id       Delete product
-
-GET    /admin/orders             List all orders (paginated, filterable)
-PATCH  /admin/orders/:id         Update order status
-
-GET    /admin/posts              List all posts including drafts
-POST   /admin/posts              Create post
-PATCH  /admin/posts/:id          Update post
-DELETE /admin/posts/:id          Delete post
-
-GET    /admin/pages              List all pages
-POST   /admin/pages              Create page
-PATCH  /admin/pages/:id          Update page
-DELETE /admin/pages/:id          Delete page
-
-POST   /media/upload             Upload file — returns public URL
-DELETE /media/:id                Delete uploaded file
-```
-
-### System
-
-```
-GET   /health              Returns { status: 'ok', timestamp }
-```
+| Method | Endpoint | Auth Guard | Description |
+|---|---|---|---|
+| `GET` | `/admins/me` | `JwtAuthGuard` + `AdminGuard` | Fetch current admin profile |
+| `GET` | `/admin/customers` | `JwtAuthGuard` + `AdminGuard` | List all customer accounts |
+| `GET` | `/admin/customers/:id` | `JwtAuthGuard` + `AdminGuard` | Retrieve customer details by ID |
+| `PATCH` | `/admin/customers/:id` | `JwtAuthGuard` + `AdminGuard` | Update customer details / status by ID |
+| `DELETE` | `/admin/customers/:id` | `JwtAuthGuard` + `AdminGuard` | Remove customer account by ID |
 
 ---
 
-## Environment variables
+## Environment Configuration
 
-Copy `.env.example` to `.env` before running anything.
+Configuration is loaded dynamically per `NODE_ENV` (e.g. `.env.development` or `.env.production`).
 
-```bash
-# Application
+### Environment Variables
+
+```env
+# Application Port and Mode
+PORT=3010
 NODE_ENV=development
-PORT=3000
 
-# MongoDB
-MONGO_URI=mongodb://localhost:27017/boilerplate
+# MongoDB Connection Options
+MONGODB_URI=mongodb://localhost:27017/
+MONGODB_HOST=localhost
+MONGODB_PORT=27017
+MONGODB_USER=
+MONGODB_PASSWORD=
+MONGODB_DATABASE=ecommerce
 
-# JWT — use long random strings in production
-JWT_ACCESS_SECRET=change_me_access_secret
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_SECRET=change_me_refresh_secret
-JWT_REFRESH_EXPIRES_IN=7d
-
-# Redis (used by throttler rate limiting store)
-REDIS_URL=redis://localhost:6379
-
-# Media upload — fill in your provider credentials
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
+# JWT Secrets (use high-entropy secrets in production)
+JWT_ACCESS_SECRET=your-access-secret-key-here
+JWT_REFRESH_SECRET=your-refresh-secret-key-here
 ```
+
+> **Note on MongoDB Connection:** If `MONGODB_URI` is provided, `DatabaseModule` connects via URI. Otherwise, it constructs the URI from `mongodb://${MONGODB_HOST}:${MONGODB_PORT}/${MONGODB_DATABASE}`.
 
 ---
 
-## Getting started
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm (`npm install -g pnpm`)
-- Docker + Docker Compose
+- **Node.js** (v20+ recommended)
+- **npm** (v10+)
+- **MongoDB** instance running locally or hosted (e.g. MongoDB Atlas)
 
-### Local development
-
-```bash
-# 1. Clone and install dependencies
-git clone https://github.com/your-org/2nest-fastify.git my-project
-cd my-project
-pnpm install
-
-# 2. Set up environment variables
-cp .env.example .env
-# Open .env and fill in your values
-
-# 3. Start MongoDB and Redis via Docker
-docker-compose up -d mongodb redis
-
-# 4. Start the API with hot reload
-pnpm run start:dev
-```
-
-API available at `http://localhost:3000`
-Health check at `http://localhost:3000/health`
-
-### Full stack via Docker (API + MongoDB + Redis together)
+### 1. Clone & Install Dependencies
 
 ```bash
-docker-compose up
+git clone https://github.com/mynk30/nestjs-api-starter.git my-api
+cd my-api
+npm install
 ```
 
----
+### 2. Configure Environment
 
-## Scripts
+Review and update `.env.development`:
 
 ```bash
-# Development
-pnpm run start:dev        # Hot reload dev server
-pnpm run start:debug      # Dev server with Node debugger
-
-# Production
-pnpm run build            # Compile TypeScript → /dist
-pnpm run start:prod       # Run compiled production build
-
-# Testing
-pnpm run test             # Unit tests
-pnpm run test:watch       # Unit tests in watch mode
-pnpm run test:e2e         # End-to-end tests
-pnpm run test:cov         # Unit tests with coverage report
-
-# Code quality
-pnpm run lint             # ESLint check
-pnpm run lint:fix         # ESLint auto-fix
-pnpm run format           # Prettier format all files
+# Ensure MongoDB host, port, database name, and JWT secrets match your environment
+cat .env.development
 ```
 
----
-
-## Module pattern
-
-Every feature follows the same structure. When adding a new module for a client (e.g. `reviews`, `categories`, `coupons`):
+### 3. Start the Server
 
 ```bash
-# Generate the NestJS scaffold
-nest g module features/reviews
-nest g controller features/reviews
-nest g service features/reviews
+# Development mode with hot-reload
+npm run start:dev
+
+# Or run using PM2 config
+npm run build
+pm2 start ecosystem.dev.config.js
 ```
 
-Then create the remaining files:
-
-```
-src/features/reviews/
-├── reviews.module.ts          # Wire controller + service + repository
-├── reviews.controller.ts      # HTTP routes only — delegates to service
-├── reviews.service.ts         # Business logic only — delegates to repository
-├── reviews.repository.ts      # DB queries only — extends BaseRepository<Review>
-├── schemas/
-│   └── review.schema.ts       # Mongoose schema + TypeScript type
-└── dto/
-    ├── create-review.dto.ts   # Zod schema for POST body
-    └── update-review.dto.ts   # Zod schema for PATCH body (all fields optional)
-```
-
-**The strict layer rule — never skip a layer:**
-
-```
-Controller  →  receives request, calls service, returns response (no DB access)
-Service     →  business logic, calls repository (no HTTP concerns)
-Repository  →  database queries only, extends BaseRepository (no business logic)
-```
+The application will start on port `3010` (or `PORT` specified in `.env.development`):
+- Health check: `http://localhost:3010/health`
+- Welcome route: `http://localhost:3010/`
 
 ---
 
-## Client config
+## Available Scripts
 
-`src/config/client.config.ts` is the **only file you change when cloning for a new client.**
-
-```typescript
-export const clientConfig = {
-  name: 'Client Name',
-
-  features: {
-    ecommerce: true,       // enables /products and /orders routes
-    blog: true,            // enables /posts routes
-    pages: true,           // enables /pages routes
-    mediaUpload: true,     // enables /media routes
-    adminPanel: true,      // enables /admin routes
-  },
-
-  cors: {
-    origins: ['https://client.com', 'https://admin.client.com'],
-  },
-
-  rateLimit: {
-    ttl: 60,               // window in seconds
-    limit: 100,            // max requests per window
-  },
-};
-```
-
-Modules disabled via feature flags are not registered in `app.module.ts` — those routes simply do not exist in that deployment.
-
----
-
-## Clone checklist
-
-Use this every time you start a new client project.
-
-- [ ] Clone repo — `git clone ... my-client-project`
-- [ ] Install — `pnpm install`
-- [ ] Copy env — `cp .env.example .env` and fill in real values
-- [ ] Update `client.config.ts` — name, feature flags, CORS origins
-- [ ] Disable unused modules in `app.module.ts` based on feature flags
-- [ ] Add client-specific Mongoose schemas for new domain models
-- [ ] Add client-specific modules using the module pattern
-- [ ] Run `docker-compose up -d` and verify `GET /health` returns `{ status: 'ok' }`
-- [ ] Create a new GitHub repo for the client and push
-- [ ] Configure environment variables on the deployment platform
-
----
-
-## Current build status
-
-| Layer | Status |
+| Command | Description |
 |---|---|
-| NestJS + Fastify scaffold | ✅ Done |
-| Pino logging + LoggingInterceptor | ✅ Done |
-| ConfigModule wired | ✅ Done |
-| `config/` — Zod env validation | ✅ Done |
-| `database/` — Mongoose module + BaseRepository | ✅ Done |
-| `common/` — guards, filters, pipes, interceptors | ✅ Done |
-| `auth/` — JWT + refresh tokens | ✅ Done |
-| `customers/` — customer profile routes | ✅ Done |
-| `admins/` — admin CRUD routes | ✅ Done |
-| `pages/` — CMS pages | 🔲 Pending |
-| `posts/` — blog content | 🔲 Pending |
-| `products/` — product catalogue | 🔲 Pending |
-| `orders/` — order management | 🔲 Pending |
-| `media/` — file upload | 🔲 Pending |
-| `health/` — health check | ✅ Done |
-| Docker + Compose | ✅ Done |
-| GitHub Actions CI | 🔲 Pending |
+| `npm run start` | Start the application with Nest CLI |
+| `npm run start:dev` | Start the application in watch mode (hot reload) |
+| `npm run start:debug` | Start with debugging enabled |
+| `npm run build` | Compile TypeScript into `/dist` bundle |
+| `npm run start:prod` | Execute compiled production code (`node dist/main`) |
+| `npm test` | Run Jest unit tests |
+| `npm run test:watch` | Run Jest unit tests in watch mode |
+| `npm run test:cov` | Generate test coverage report |
+| `npm run test:e2e` | Run end-to-end tests via Supertest |
+| `npm run lint` | Run ESLint with auto-fix |
+| `npm run format` | Format source code with Prettier |
+
+---
+
+## Developer Tooling & Postman
+
+The project includes a ready-to-import **Postman Collection** at `postman_collection.json`.
+
+### Postman Setup:
+1. Open Postman -> **Import** -> Select `postman_collection.json`.
+2. Define the collection or environment variable:
+   - `base_url`: `http://localhost:3010`
+3. Execute authentication requests:
+   - `Customer Login`: Tests automatically store `accessToken` into `{{customer_token}}` and receive the `customer_refresh_token` HttpOnly cookie.
+   - `Admin Login`: Tests automatically store `accessToken` into `{{admin_token}}` and receive the `admin_refresh_token` HttpOnly cookie.
+   - `Refresh Token`: Automatically exchanges the cookie for a new access token.
+   - `Logout`: Clears server-side and browser cookies.
+
+### Visual Documentation
+Open `documentation/index.html` or `documentation/technical-structure.html` directly in any web browser to view the interactive documentation dashboard and architecture breakdown.
+
+---
+
+## Adding New Feature Modules
+
+To create a new domain module (e.g. `products`), adhere to the standard three-layer architecture:
+
+### 1. Scaffold Feature Folder
+```text
+src/products/
+├── schemas/
+│   └── product.schema.ts      # Mongoose Schema & Document
+├── dto/
+│   ├── create-product.dto.ts  # Validation DTO (class-validator)
+│   └── update-product.dto.ts
+├── products.repository.ts     # Extends BaseRepository<ProductDocument>
+├── products.service.ts        # Business logic calling repository
+├── products.controller.ts     # HTTP controllers with guards
+└── products.module.ts         # Registers model, repository, controller, service
+```
+
+### 2. Implement the Repository
+```typescript
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { BaseRepository } from '../database/base.repository';
+import { Product, ProductDocument } from './schemas/product.schema';
+
+@Injectable()
+export class ProductsRepository extends BaseRepository<ProductDocument> {
+  constructor(
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
+  ) {
+    super(productModel);
+  }
+}
+```
+
+### 3. Register in `app.module.ts`
+Import `ProductsModule` into `AppModule`'s `imports` array.
 
 ---
 
 ## License
 
-MIT
+This project is licensed under the [UNLICENSED](LICENSE) license.

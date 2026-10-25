@@ -1,8 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 
-
 import { AppModule } from './app.module';
-import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { LoggingInterceptor } from './common/interceptors/logging/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -11,22 +13,21 @@ import { ValidationPipe } from '@nestjs/common';
 import fastifyCookie from '@fastify/cookie';
 
 async function bootstrap() {
-
   const isProd = process.env.NODE_ENV === 'production';
 
   const logger = isProd
     ? true
     : {
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: false,
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: false,
+          },
         },
-      },
-    };
+      };
 
   const port = process.env.PORT || 3000;
-  console.log("PORT : ", port);
+  console.log('PORT : ', port);
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
@@ -38,9 +39,12 @@ async function bootstrap() {
 
   await app.register(fastifyCookie as any);
 
-  app.getHttpAdapter().getInstance().addHook("onRequest", async (request, reply) => {
-    (request as any).startTime = Date.now();
-  });
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .addHook('onRequest', async (request, reply) => {
+      (request as any).startTime = Date.now();
+    });
 
   app.enableCors({
     origin: clientConfig.cors.origins,
@@ -59,11 +63,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-
-
   await app.listen(port);
-
-
 }
 
 bootstrap();

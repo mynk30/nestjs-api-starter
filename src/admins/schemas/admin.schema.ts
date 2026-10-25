@@ -16,6 +16,5 @@ export class Admin {
   refreshToken?: string;
 }
 
-
 export type AdminDocument = Admin & Document;
 export const AdminSchema = SchemaFactory.createForClass(Admin);

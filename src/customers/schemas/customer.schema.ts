@@ -43,6 +43,5 @@ export class Customer {
   createdBy: Types.ObjectId;
 }
 
-
 export type CustomerDocument = Customer & Document;
 export const CustomerSchema = SchemaFactory.createForClass(Customer);

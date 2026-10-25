@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CustomersRepository } from './customers.repository';
 import { CustomerDocument } from './schemas/customer.schema';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -7,9 +12,12 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class CustomersService {
-  constructor(private readonly customersRepository: CustomersRepository) { }
+  constructor(private readonly customersRepository: CustomersRepository) {}
 
-  async create(createCustomerDto: CreateCustomerDto, adminId?: string): Promise<CustomerDocument> {
+  async create(
+    createCustomerDto: CreateCustomerDto,
+    adminId?: string,
+  ): Promise<CustomerDocument> {
     const { email, password } = createCustomerDto;
 
     // Check if customer already exists
@@ -50,8 +58,14 @@ export class CustomersService {
     return this.customersRepository.findById(id);
   }
 
-  async updateProfile(id: string, updateCustomerDto: UpdateCustomerDto): Promise<CustomerDocument> {
-    const customer = await this.customersRepository.updateById(id, updateCustomerDto);
+  async updateProfile(
+    id: string,
+    updateCustomerDto: UpdateCustomerDto,
+  ): Promise<CustomerDocument> {
+    const customer = await this.customersRepository.updateById(
+      id,
+      updateCustomerDto,
+    );
     if (!customer) {
       throw new NotFoundException('Customer not found');
     }
@@ -59,7 +73,9 @@ export class CustomersService {
   }
 
   async removeAccount(id: string): Promise<void> {
-    const result = await this.customersRepository.updateById(id, { isActive: false });
+    const result = await this.customersRepository.updateById(id, {
+      isActive: false,
+    });
     if (!result) {
       throw new NotFoundException('Customer not found');
     }

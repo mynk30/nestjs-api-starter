@@ -1,12 +1,20 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Res, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Res,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import * as fastify from 'fastify';
 
 @Controller('auth')
 export class AuthController {
-
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('customer/register')
   async registerCustomer(@Body() registerDto: RegisterDto) {
@@ -19,7 +27,8 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) reply: fastify.FastifyReply,
   ) {
-    const { accessToken, refreshToken, user } = await this.authService.loginCustomer(loginDto);
+    const { accessToken, refreshToken, user } =
+      await this.authService.loginCustomer(loginDto);
 
     reply.setCookie('customer_refresh_token', refreshToken, {
       httpOnly: true,
@@ -42,7 +51,8 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) reply: fastify.FastifyReply,
   ) {
-    const { accessToken, refreshToken, user } = await this.authService.loginAdmin(loginDto);
+    const { accessToken, refreshToken, user } =
+      await this.authService.loginAdmin(loginDto);
 
     reply.setCookie('admin_refresh_token', refreshToken, {
       httpOnly: true,
@@ -56,9 +66,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(
-    @Req() request: fastify.FastifyRequest,
-  ) {
+  async refresh(@Req() request: fastify.FastifyRequest) {
     const customerToken = request.cookies.customer_refresh_token;
     const adminToken = request.cookies.admin_refresh_token;
     const token = customerToken || adminToken;

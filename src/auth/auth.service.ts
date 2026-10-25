@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -12,7 +16,7 @@ export class AuthService {
     private readonly customersService: CustomersService,
     private readonly adminsService: AdminsService,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   // Helper to generate both tokens
   private async generateTokens(payload: JwtPayload) {
@@ -46,7 +50,7 @@ export class AuthService {
     });
 
     const customerObj = customer.toObject();
-    delete (customerObj as any).password;
+    delete customerObj.password;
     return customerObj;
   }
 
@@ -62,7 +66,11 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const payload: JwtPayload = { id: customer._id.toString(), email: customer.email, type: 'customer' };
+    const payload: JwtPayload = {
+      id: customer._id.toString(),
+      email: customer.email,
+      type: 'customer',
+    };
     const { accessToken, refreshToken } = await this.generateTokens(payload);
 
     // Store refresh token in DB
@@ -70,8 +78,8 @@ export class AuthService {
     await customer.save();
 
     const customerObj = customer.toObject();
-    delete (customerObj as any).password;
-    delete (customerObj as any).refreshToken;
+    delete customerObj.password;
+    delete customerObj.refreshToken;
 
     return {
       accessToken,
@@ -97,7 +105,7 @@ export class AuthService {
     });
 
     const adminObj = admin.toObject();
-    delete (adminObj as any).password;
+    delete adminObj.password;
     return adminObj;
   }
 
@@ -113,7 +121,11 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const payload: JwtPayload = { id: admin._id.toString(), email: admin.email, type: 'admin' };
+    const payload: JwtPayload = {
+      id: admin._id.toString(),
+      email: admin.email,
+      type: 'admin',
+    };
     const { accessToken, refreshToken } = await this.generateTokens(payload);
 
     // Store refresh token in DB
@@ -121,8 +133,8 @@ export class AuthService {
     await admin.save();
 
     const adminObj = admin.toObject();
-    delete (adminObj as any).password;
-    delete (adminObj as any).refreshToken;
+    delete adminObj.password;
+    delete adminObj.refreshToken;
 
     return {
       accessToken,
@@ -155,10 +167,14 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      console.log("THIW IS THE USER: ", user)
+      console.log('THIW IS THE USER: ', user);
 
       // 4. Generate new access token
-      const newPayload: JwtPayload = { id: user._id, email: user.email, type: payload.type };
+      const newPayload: JwtPayload = {
+        id: user._id,
+        email: user.email,
+        type: payload.type,
+      };
       const accessToken = this.jwtService.sign(newPayload, {
         secret: process.env.JWT_ACCESS_SECRET || 'access-secret',
         expiresIn: '15m',
